@@ -1,0 +1,45 @@
+name: Bot
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [restart-bot]
+
+jobs:
+  bot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Ensure data dir exists
+        run: mkdir -p data
+
+      - name: Restore data cache
+        uses: actions/cache@v4
+        with:
+          path: data
+          key: bot-data-${{ github.run_id }}
+          restore-keys: bot-data-
+
+      - name: Run bot
+        env:
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+        run: |
+          # Au shutdown, le bot doit sauvegarder avant de mourir
+          trap 'echo "Stopping..."' SIGTERM
+          python bot.py
+
+      - name: Save data cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: data
+          key: bot-data-${{ github.run_id }}

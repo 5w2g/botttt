@@ -1,0 +1,1 @@
+CreateObject("WScript.Shell").Run """D:\discord-role-bot\discord role\run_hidden.bat""", 0, False
